@@ -206,7 +206,25 @@ class HtmlToText(HTMLParser, object):
         self.data.append(data)
 
     def handle_entityref(self, data):
-        self.data.append(unichr(htmlentitydefs.name2codepoint[data]))
+        def fixup(m):
+            data = m.group(0)
+            if data[:2] == "&#":
+                # character reference
+                try:
+                    if data[:3] == "&#x":
+                        self.data.append(unichr(int(data[3:-1], 16)))
+                    else:
+                        self.data.append(unichr(int(data[2:-1])))
+                except ValueError:
+                    pass
+            else:
+                # named entity
+                try:
+                    data = unichr(htmlentitydefs.name2codepoint[data[1:-1]])
+                except KeyError:
+                    pass
+            self.data.append(data) # leave as is
+        self.data.append(re.sub("&#?\w+;", fixup, data))
 
     def getText(self):
         text = ''.join(self.data).strip()
