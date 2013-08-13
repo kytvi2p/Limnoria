@@ -49,7 +49,7 @@ def configure(advanced):
 class Ignores(registry.SpaceSeparatedListOf):
     List = ircutils.IrcSet
     Value = conf.ValidHostmask
-    
+
 class Networks(registry.SpaceSeparatedListOf):
     List = ircutils.IrcSet
     Value = registry.String
@@ -87,5 +87,8 @@ conf.registerChannelValue(Relay, 'noticeNonPrivmsgs',
     rather than PRIVMSGs for non-PRIVMSG relay messages (i.e., joins, parts,
     nicks, quits, modes, etc.)""")))
 
+conf.registerChannelValue(Relay, 'showJoinsPartsQuits',
+    registry.Boolean(False, _("""Determines whether the bot will relay
+    joins, parts, nicks, quits, modes, etc.""")))
 
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:

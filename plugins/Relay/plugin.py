@@ -394,7 +394,8 @@ class Relay(callbacks.Plugin):
             hostmask = ''
         s = format(_('%s%s has joined on %s'), msg.nick, hostmask, network)
         m = self._msgmaker(channel, s)
-        self._sendToOthers(irc, m)
+        if self.registryValue('showJoinsPartsQuits', channel):
+            self._sendToOthers(irc, m)
 
     def doPart(self, irc, msg):
         irc = self._getRealIrc(irc)
@@ -412,7 +413,8 @@ class Relay(callbacks.Plugin):
         else:
             s = format(_('%s%s has left on %s'), msg.nick, hostmask, network)
         m = self._msgmaker(channel, s)
-        self._sendToOthers(irc, m)
+        if self.registryValue('showJoinsPartsQuits', channel):
+            self._sendToOthers(irc, m)
 
     def doMode(self, irc, msg):
         irc = self._getRealIrc(irc)
@@ -423,7 +425,8 @@ class Relay(callbacks.Plugin):
         s = format(_('mode change by %s on %s: %s'),
                    msg.nick, network, ' '.join(msg.args[1:]))
         m = self._msgmaker(channel, s)
-        self._sendToOthers(irc, m)
+        if self.registryValue('showJoinsPartsQuits', channel):
+            self._sendToOthers(irc, m)
 
     def doKick(self, irc, msg):
         irc = self._getRealIrc(irc)
@@ -438,7 +441,8 @@ class Relay(callbacks.Plugin):
             s = format(_('%s was kicked by %s on %s'),
                        msg.args[1], msg.nick, network)
         m = self._msgmaker(channel, s)
-        self._sendToOthers(irc, m)
+        if self.registryValue('showJoinsPartsQuits', channel):
+            self._sendToOthers(irc, m)
 
     def doNick(self, irc, msg):
         irc = self._getRealIrc(irc)
@@ -449,7 +453,8 @@ class Relay(callbacks.Plugin):
             if channel in irc.state.channels:
                 if newNick in irc.state.channels[channel].users:
                     m = self._msgmaker(channel, s)
-                    self._sendToOthers(irc, m)
+                    if self.registryValue('showJoinsPartsQuits', channel):
+                        self._sendToOthers(irc, m)
 
     def doTopic(self, irc, msg):
         irc = self._getRealIrc(irc)
@@ -477,7 +482,9 @@ class Relay(callbacks.Plugin):
             s = format(_('topic change by %s on %s: %s'),
                        msg.nick, network, newTopic)
             m = self._msgmaker(channel, s)
-            self._sendToOthers(irc, m)
+
+            if self.registryValue('showJoinsPartsQuits', channel):
+                self._sendToOthers(irc, m)
 
     def doQuit(self, irc, msg):
         irc = self._getRealIrc(irc)
@@ -490,7 +497,8 @@ class Relay(callbacks.Plugin):
             if channel in self.ircstates[irc].channels:
                 if msg.nick in self.ircstates[irc].channels[channel].users:
                     m = self._msgmaker(channel, s)
-                    self._sendToOthers(irc, m)
+                    if self.registryValue('showJoinsPartsQuits', channel):
+                        self._sendToOthers(irc, m)
 
     def doError(self, irc, msg):
         irc = self._getRealIrc(irc)
@@ -498,7 +506,8 @@ class Relay(callbacks.Plugin):
         s = format(_('disconnected from %s: %s'), network, msg.args[0])
         for channel in self.registryValue('channels'):
             m = self._msgmaker(channel, s)
-            self._sendToOthers(irc, m)
+            if self.registryValue('showJoinsPartsQuits', channel):
+                self._sendToOthers(irc, m)
 
     def outFilter(self, irc, msg):
         irc = self._getRealIrc(irc)
