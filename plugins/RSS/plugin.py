@@ -155,17 +155,16 @@ class RSS(callbacks.Plugin):
             if self.registryValue(dateconfig, channel):
                 if headline[2]:
                     pubDate = ' [%s]' % (headline[2],)
-            try:
+            if isinstance(headline[0], unicode):
                 newheadlines.append(format('%s %u%s',
-                                           headline[0],
-                                           link,
-                                           pubDate))
-            except UnicodeDecodeError:
+                                               headline[0].encode('utf-8','replace'),
+                                               link,
+                                               pubDate))
+            else:
                 newheadlines.append(format('%s %u%s',
-                                           headline[0].decode('utf8',
-                                                              'replace'),
-                                           link,
-                                           pubDate))
+                                               headline[0].decode('utf-8','replace'),
+                                               link,
+                                               pubDate))
         return newheadlines
 
     def _newHeadlines(self, irc, channels, name, url):
