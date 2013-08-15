@@ -153,6 +153,8 @@ class RSS(callbacks.Plugin):
                         link = re.sub('^.*http://', 'http://', headline[1])
                     else:
                         link = headline[1]
+            if 'tracker2.postman.i2p' in link:
+                link = re.sub('&amp;?id', '&id', link) # postman fix
             if self.registryValue(dateconfig, channel):
                 if headline[2]:
                     pubDate = ' [%s]' % (headline[2],)
