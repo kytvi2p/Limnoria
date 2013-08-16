@@ -135,6 +135,11 @@ class Web(callbacks.PluginRegexp):
             if r and r.search(url):
                 self.log.debug('Not titleSnarfing %q.', url)
                 return
+            if self.registryValue('ignoredNicks'):
+                for ignore in self.registryValue('ignoredNicks'):
+                    if ignore.lower() in str(msg.nick).lower():
+                        self.log.debug('Ignoring url from %q', ignore)
+                        return
             try:
                 size = conf.supybot.protocols.http.peekSize()
                 text = utils.web.getUrl(url, size=size)
