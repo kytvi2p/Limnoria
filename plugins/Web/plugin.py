@@ -90,12 +90,17 @@ def fetch_sandbox(f):
         f(self, delayed_irc, msg, *args, **kwargs)
         return delayed_irc._replies
     def newf(self, irc, *args):
+        if f.func_name == 'fetch' and conf.supybot.plugins.Web.fetch.maximum() == 0:
+            irc.error(_('This command is disabled '
+                      '(supybot.plugins.Web.fetch.maximum is set to 0).'),
+                      Raise=True)
         try:
+
             replies = commands.process(process, self, irc, *args,
-                    timeout=5, heap_size=1024*1024,
+                    timeout=conf.supybot.plugins.Web.timeout(), heap_size=1024*1024,
                     pn=self.name(), cn=f.func_name)
         except commands.ProcessTimeoutError:
-            raise utils.web.Error(_('Page is too big.'))
+            raise utils.web.Error(_('Process timed out. Page may be too big.'))
         else:
             for reply in replies:
                 irc.queueMsg(reply)
