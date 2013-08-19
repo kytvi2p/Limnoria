@@ -43,6 +43,12 @@ import supybot.ircutils as ircutils
 import supybot.registry as registry
 import supybot.callbacks as callbacks
 import urllib2
+try:
+    import chardet
+    HaveChardet = True
+except ImportError:
+    HaveChardet = False
+    pass
 from supybot.i18n import PluginInternationalization, internationalizeDocstring
 _ = PluginInternationalization('RSS')
 
@@ -172,10 +178,21 @@ class RSS(callbacks.Plugin):
                                                 link,
                                                 pubDate))
                 else:
-                    newheadlines.append(format('%s %u%s',
+                    try:
+                        newheadlines.append(format('%s %u%s',
                                                 headline[0].decode('utf-8','replace'),
                                                 link,
                                                 pubDate))
+                    except UnicodeDecodeError:
+                        if HaveChardet == True:
+                            enc = chardet.detect(headline[0])['encoding']
+                            newheadlines.append(format('%s %u%s',
+                                                headline[0].decode(enc,'replace'),
+                                                link,
+                                                pubDate))
+                        else:
+                            raise callbacks.Error, 'Unknown charset in RSS feed.'
+
             else:
                 newheadlines.append(format('%s %u%s',
                                             headline[0],
@@ -524,6 +541,11 @@ class RSS(callbacks.Plugin):
         title = conv(info.get('title', 'unavailable'))
         desc = conv(info.get('description', 'unavailable'))
         link = conv(info.get('link', 'unavailable'))
+        if sys.version_info[0] < 3:
+            if isinstance(title, unicode):
+                title = title.encode('utf-8')
+            if isinstance(desc, unicode):
+                desc = desc.encode('utf-8')
         # The rest of the entries are all available in the channel key
         response = format(_('Title: %s;  URL: %u;  '
                           'Description: %s;  Last updated: %s.'),
