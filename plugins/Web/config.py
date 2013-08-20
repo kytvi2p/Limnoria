@@ -70,6 +70,7 @@ conf.registerGlobalValue(Web, 'timeout',
 conf.registerGlobalValue(Web, 'ignoredNicks',
     registry.SpaceSeparatedSetOfStrings([], """If set, bot will not snarf urls
     from matching nicks."""))
+
 conf.registerGroup(Web, 'fetch')
 conf.registerGlobalValue(Web.fetch, 'maximum',
     registry.NonNegativeInteger(0, _("""Determines the maximum number of
