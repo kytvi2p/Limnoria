@@ -48,6 +48,7 @@ try:
 except ImportError:
     HaveChardet = False
     pass
+
 from supybot.i18n import PluginInternationalization, internationalizeDocstring
 _ = PluginInternationalization('RSS')
 
@@ -181,8 +182,8 @@ class RSS(callbacks.Plugin):
                     pubDate = ' [%s]' % (headline[2],)
             newheadlines.append(format('%s %u%s',
                                         normalize_encoding(headline[0]),
-                                                normalize_encoding(link),
-                                                pubDate))
+                                        normalize_encoding(link),
+                                        pubDate))
         return newheadlines
 
     def _newHeadlines(self, irc, channels, name, url):
