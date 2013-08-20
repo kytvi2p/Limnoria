@@ -1109,6 +1109,15 @@ registerGlobalValue(supybot.protocols.http, 'proxy',
     through.  The value should be of the form 'host:port'.""")))
 utils.web.proxy = supybot.protocols.http.proxy
 
+###
+# supybot.protocols.https
+###
+registerGroup(supybot.protocols, 'https')
+registerGlobalValue(supybot.protocols.https, 'proxy',
+    registry.String('', _("""Determines what proxy all HTTPS requests should go
+    through.  The value should be of the form 'host:port'.""")))
+utils.web.https_proxy = supybot.protocols.https.proxy
+
 
 ###
 # HTTP server

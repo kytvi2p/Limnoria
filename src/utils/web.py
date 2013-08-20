@@ -96,6 +96,10 @@ defaultHeaders = {
     'User-agent': 'Mozilla/5.0 (compatible; utils.web python module)'
     }
 
+proxy = None
+proxies = {}
+https_proxy = None
+
 # Other modules should feel free to replace this with an appropriate
 # application-specific function.  Feel free to use a callable here.
 proxy = None
@@ -128,9 +132,19 @@ def getUrlFd(url, headers=None, data=None):
             request = url
             request.add_data(data)
         httpProxy = force(proxy)
+        httpsProxy = force(https_proxy)
         if httpProxy:
-            request.set_proxy(httpProxy, 'http')
-        fd = urllib2.urlopen(request)
+            proxies['http'] = httpProxy
+        elif proxies.has_key('http'):
+            del proxies['http']
+
+        if httpsProxy:
+            proxies['https'] = httpsProxy
+        elif proxies.has_key('https'):
+            del proxies['https']
+        proxy_handler = urllib2.ProxyHandler(proxies)
+        opener = urllib2.build_opener(proxy_handler)
+        fd = opener.open(request)
         return fd
     except socket.timeout, e:
         raise Error, TIMED_OUT
