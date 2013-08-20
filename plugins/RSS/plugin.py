@@ -258,8 +258,11 @@ class RSS(callbacks.Plugin):
                         pre = ircutils.bold(pre)
                         sep = ircutils.bold(sep)
                     headlines = self.buildHeadlines(channelnewheadlines, channel)
-                    irc.replies(headlines, prefixer=pre, joiner=sep,
-                                to=channel, prefixNick=False, private=True)
+                    #irc.replies(headlines, prefixer=pre, joiner=sep,
+                    #            to=channel, prefixNick=False, private=True)
+                    for headline in headlines:
+                        irc.reply("[ %s ] %s" % (name, headline), to=channel,
+                                prefixNick=False, private=True)
         finally:
             self.releaseLock(url)
 
@@ -495,7 +498,9 @@ class RSS(callbacks.Plugin):
         sep = self.registryValue('headlineSeparator', channel)
         if self.registryValue('bold', channel):
             sep = ircutils.bold(sep)
-        irc.replies(headlines, joiner=sep)
+        #irc.replies(headlines, joiner=sep)
+        for headline in headlines:
+            irc.reply(headline)
     rss = wrap(rss, ['url', additional('int')])
 
     @internationalizeDocstring
