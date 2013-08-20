@@ -38,6 +38,7 @@ import httplib
 import urlparse
 import htmlentitydefs
 from HTMLParser import HTMLParser
+
 sockerrors = (socket.error,)
 try:
     sockerrors += (socket.sslerror,)
@@ -107,11 +108,6 @@ def getUrlFd(url, headers=None, data=None):
     if headers is None:
         headers = defaultHeaders
     try:
-        opener = urllib2.build_opener()
-        httpProxy = force(proxy)
-        if httpProxy:
-            proxy_handler = urllib2.ProxyHandler({'http': httpProxy, 'https': httpProxy})
-            opener = urllib2.build_opener(proxy_handler)
         if not isinstance(url, urllib2.Request):
             if '#' in url:
                 url = url[:url.index('#')]
@@ -121,12 +117,20 @@ def getUrlFd(url, headers=None, data=None):
                 url = scheme + '://' + url
             request = urllib2.Request(url, headers=headers, data=data)
             if 'auth' in locals():
+                if sys.version_info[0] >= 3 and isinstance(auth, str):
+                    auth = auth.encode()
+                auth = base64.b64encode(auth)
+                if sys.version_info[0] >= 3:
+                    auth = auth.decode()
                 request.add_header('Authorization',
-                        'Basic ' + base64.b64encode(auth))
+                        'Basic ' + auth)
         else:
             request = url
             request.add_data(data)
-        fd = opener.open(request)
+        httpProxy = force(proxy)
+        if httpProxy:
+            request.set_proxy(httpProxy, 'http')
+        fd = urllib2.urlopen(request)
         return fd
     except socket.timeout, e:
         raise Error, TIMED_OUT
@@ -247,4 +251,7 @@ def mungeEmail(s):
     s = s.replace('.', ' DOT ')
     return s
 
+
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
+
+

@@ -42,7 +42,6 @@ from supybot.commands import *
 import supybot.ircutils as ircutils
 import supybot.registry as registry
 import supybot.callbacks as callbacks
-import urllib2
 try:
     import chardet
     HaveChardet = True
@@ -83,12 +82,6 @@ class RSS(callbacks.Plugin):
         self.cachedFeeds = {}
         self.cachedHeadlines = {}
         self.gettingLockLock = threading.Lock()
-        proxy = conf.supybot.protocols.http.proxy()
-        if proxy:
-            self.proxy = urllib2.ProxyHandler({'http': proxy, 'https': proxy})
-        else:
-            self.proxy = urllib2.ProxyHandler({})
-
         for name in self.registryValue('feeds'):
             self._registerFeed(name)
             try:
@@ -264,9 +257,8 @@ class RSS(callbacks.Plugin):
                         pre = ircutils.bold(pre)
                         sep = ircutils.bold(sep)
                     headlines = self.buildHeadlines(channelnewheadlines, channel)
-                    for headline in headlines:
-                        irc.reply("[ %s ] %s" % (name,headline), to=channel,
-                                prefixNick=False, private=True)
+                    irc.replies(headlines, prefixer=pre, joiner=sep,
+                                to=channel, prefixNick=False, private=True)
         finally:
             self.releaseLock(url)
 
@@ -305,7 +297,7 @@ class RSS(callbacks.Plugin):
                 results = None
                 try:
                     self.log.debug('Downloading new feed from %u', url)
-                    results = feedparser.parse(url, handlers = [self.proxy])
+                    results = feedparser.parse(url)
                     if 'bozo_exception' in results and not results['entries']:
                         raise results['bozo_exception']
                 except feedparser.sgmllib.SGMLParseError:
@@ -502,8 +494,7 @@ class RSS(callbacks.Plugin):
         sep = self.registryValue('headlineSeparator', channel)
         if self.registryValue('bold', channel):
             sep = ircutils.bold(sep)
-        for headline in headlines:
-            irc.reply(headline)
+        irc.replies(headlines, joiner=sep)
     rss = wrap(rss, ['url', additional('int')])
 
     @internationalizeDocstring
