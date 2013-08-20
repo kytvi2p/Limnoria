@@ -42,6 +42,13 @@ from supybot.commands import *
 import supybot.ircutils as ircutils
 import supybot.registry as registry
 import supybot.callbacks as callbacks
+try:
+    import chardet
+    HaveChardet = True
+except ImportError:
+    HaveChardet = False
+    pass
+
 from supybot.i18n import PluginInternationalization, internationalizeDocstring
 _ = PluginInternationalization('RSS')
 
@@ -143,6 +150,21 @@ class RSS(callbacks.Plugin):
                     time.sleep(0.1) # So other threads can run.
 
     def buildHeadlines(self, headlines, channel, linksconfig='announce.showLinks', dateconfig='announce.showPubDate'):
+        def normalize_encoding(text):
+            if sys.version_info[0] < 3:
+                if isinstance(text, unicode):
+                    text = text.encode('utf-8','replace')
+                else:
+                    try:
+                        text = text.decode('utf-8', 'replace')
+                    except UnicodeDecodeError:
+                        if HaveChardet is True:
+                            encoding = chardet.detect(text)['encoding']
+                            text = text.decode(encoding, 'replace')
+                        else:
+                            raise callbacks.Error, 'Unknown charset.'
+            return text
+
         newheadlines = []
         for headline in headlines:
             link = ''
@@ -158,22 +180,10 @@ class RSS(callbacks.Plugin):
             if self.registryValue(dateconfig, channel):
                 if headline[2]:
                     pubDate = ' [%s]' % (headline[2],)
-            if sys.version_info[0] < 3:
-                if isinstance(headline[0], unicode):
-                    newheadlines.append(format('%s %u%s',
-                                                headline[0].encode('utf-8','replace'),
-                                                link,
-                                                pubDate))
-                else:
-                    newheadlines.append(format('%s %u%s',
-                                                headline[0].decode('utf-8','replace'),
-                                                link,
-                                                pubDate))
-            else:
-                newheadlines.append(format('%s %u%s',
-                                            headline[0],
-                                            link,
-                                            pubDate))
+            newheadlines.append(format('%s %u%s',
+                                        normalize_encoding(headline[0]),
+                                        normalize_encoding(link),
+                                        pubDate))
         return newheadlines
 
     def _newHeadlines(self, irc, channels, name, url):
@@ -515,6 +525,11 @@ class RSS(callbacks.Plugin):
         title = conv(info.get('title', 'unavailable'))
         desc = conv(info.get('description', 'unavailable'))
         link = conv(info.get('link', 'unavailable'))
+        if sys.version_info[0] < 3:
+            if isinstance(title, unicode):
+                title = title.encode('utf-8')
+            if isinstance(desc, unicode):
+                desc = desc.encode('utf-8')
         # The rest of the entries are all available in the channel key
         response = format(_('Title: %s;  URL: %u;  '
                           'Description: %s;  Last updated: %s.'),
