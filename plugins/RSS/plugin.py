@@ -156,6 +156,21 @@ class RSS(callbacks.Plugin):
                     time.sleep(0.1) # So other threads can run.
 
     def buildHeadlines(self, headlines, channel, linksconfig='announce.showLinks', dateconfig='announce.showPubDate'):
+        def normalize_encoding(text):
+            if sys.version_info[0] < 3:
+                if isinstance(text, unicode):
+                    text = text.encode('utf-8','replace')
+                else:
+                    try:
+                        text = text.decode('utf-8', 'replace')
+                    except UnicodeDecodeError:
+                        if HaveChardet is True:
+                            encoding = chardet.detect(text)['encoding']
+                            text = text.decode(encoding, 'replace')
+                        else:
+                            raise callbacks.Error, 'Unknown charset.'
+            return text
+
         newheadlines = []
         for headline in headlines:
             link = ''
@@ -171,33 +186,10 @@ class RSS(callbacks.Plugin):
             if self.registryValue(dateconfig, channel):
                 if headline[2]:
                     pubDate = ' [%s]' % (headline[2],)
-            if sys.version_info[0] < 3:
-                if isinstance(headline[0], unicode):
-                    newheadlines.append(format('%s %u%s',
-                                                headline[0].encode('utf-8','replace'),
-                                                link,
+            newheadlines.append(format('%s %u%s',
+                                        normalize_encoding(headline[0]),
+                                                normalize_encoding(link),
                                                 pubDate))
-                else:
-                    try:
-                        newheadlines.append(format('%s %u%s',
-                                                headline[0].decode('utf-8','replace'),
-                                                link,
-                                                pubDate))
-                    except UnicodeDecodeError:
-                        if HaveChardet == True:
-                            enc = chardet.detect(headline[0])['encoding']
-                            newheadlines.append(format('%s %u%s',
-                                                headline[0].decode(enc,'replace'),
-                                                link,
-                                                pubDate))
-                        else:
-                            raise callbacks.Error, 'Unknown charset in RSS feed.'
-
-            else:
-                newheadlines.append(format('%s %u%s',
-                                            headline[0],
-                                            link,
-                                            pubDate))
         return newheadlines
 
     def _newHeadlines(self, irc, channels, name, url):
