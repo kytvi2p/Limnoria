@@ -68,7 +68,7 @@ conf.registerGlobalValue(Web, 'timeout',
     allow process to run.""")))
 
 conf.registerGlobalValue(Web, 'ignoredNicks',
-    registry.SpaceSeparatedListOfStrings([], """If set, bot will not snarf urls
+    registry.SpaceSeparatedSetOfStrings([], """If set, bot will not snarf urls
     from matching nicks."""))
 conf.registerGroup(Web, 'fetch')
 conf.registerGlobalValue(Web.fetch, 'maximum',
