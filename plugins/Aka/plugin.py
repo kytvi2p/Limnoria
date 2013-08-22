@@ -47,7 +47,8 @@ try:
     import sqlalchemy.ext
     import sqlalchemy.ext.declarative
 except ImportError:
-    sqlalchemy = None
+    raise callbacks.error('You have to install python-sqlalchemy in order '
+            'to load this plugin.')
 
 if sqlalchemy:
 
@@ -252,7 +253,7 @@ class Aka(callbacks.Plugin):
         return list(set(map(callbacks.formatCommand,
                             self._db.get_aka_list(channel) +
                             self._db.get_aka_list('global')) +
-                self.__parent.listCommands()))
+                ['add', 'remove', 'lock', 'unlock', 'importaliasdatabase']))
 
     def getCommand(self, args):
         canonicalName = callbacks.canonicalName
