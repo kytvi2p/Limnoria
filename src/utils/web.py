@@ -146,7 +146,7 @@ def getUrlFd(url, headers=None, data=None):
             del proxies['https']
         proxy_handler = urllib2.ProxyHandler(proxies)
         opener = urllib2.build_opener(proxy_handler)
-        fd = opener.open(request)
+        fd = opener.open(request, timeout = 60)
         return fd
     except socket.timeout, e:
         raise Error, TIMED_OUT
