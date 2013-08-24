@@ -93,7 +93,9 @@ def strError(e):
         return str(e)
 
 defaultHeaders = {
-    'User-agent': 'Mozilla/5.0 (compatible; utils.web python module)'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8 gzip,'
+                    'deflate en-us,en;q=0.5'
     }
 
 proxy = None
