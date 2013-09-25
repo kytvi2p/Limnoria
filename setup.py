@@ -49,13 +49,14 @@ try:
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     version = proc.stdout.readline() \
             .strip() \
-            .replace(' +', '+') \
-            .replace(' ', 'T')
+            .split(' +')[0] \
+            .replace(' ', 'T') \
+            .replace(':', '-')
 except:
     pass
 if not version:
     from time import gmtime, strftime
-    version = 'installed on ' + strftime("%Y-%m-%dT%H:%M:%S+0000", gmtime())
+    version = 'installed on ' + strftime("%Y-%m-%dT%H-%M-%S", gmtime())
 try:
     os.unlink(os.path.join('src', 'version.py'))
 except OSError: # Does not exist
@@ -173,24 +174,15 @@ packages = ['supybot',
             [
              'supybot.plugins.Dict.local',
              'supybot.plugins.Math.local',
-             'supybot.plugins.Google.local',
-             'supybot.plugins.RSS.local',
-             'supybot.plugins.Time.local',
-             'supybot.plugins.Time.local.dateutil',
             ]
 
 package_dir = {'supybot': 'src',
                'supybot.utils': 'src/utils',
+               'supybot.locales': 'locales',
                'supybot.plugins': 'plugins',
                'supybot.drivers': 'src/drivers',
-               'supybot.locales': 'locales',
-               'supybot.plugins.Google.local': 'plugins/Google/local',
                'supybot.plugins.Dict.local': 'plugins/Dict/local',
                'supybot.plugins.Math.local': 'plugins/Math/local',
-               'supybot.plugins.RSS.local': 'plugins/RSS/local',
-               'supybot.plugins.Time.local': 'plugins/Time/local',
-               'supybot.plugins.Time.local.dateutil':
-               'plugins/Time/local/dateutil',
               }
 
 package_data = {'supybot.locales': [s for s in os.listdir('locales/')]}
@@ -229,7 +221,8 @@ setup(
         'Operating System :: OS Independent',
         'Operating System :: POSIX',
         'Operating System :: Microsoft :: Windows',
-        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
         ],
     cmdclass = {'build_py': build_py},
 

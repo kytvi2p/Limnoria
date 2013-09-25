@@ -240,6 +240,12 @@ class Aka(callbacks.Plugin):
         self._db = AkaDB()
 
     def isCommandMethod(self, name):
+        args = name.split(' ')
+        if len(args) > 1 and \
+                callbacks.canonicalName(args[0]) != self.canonicalName():
+            for cb in dynamic.irc.callbacks: # including this plugin
+                if cb.getCommand(args[0:-1]):
+                    return False
         if sys.version_info[0] < 3 and isinstance(name, str):
             name = name.decode('utf8')
         channel = dynamic.channel or 'global'

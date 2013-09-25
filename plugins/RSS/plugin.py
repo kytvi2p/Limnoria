@@ -34,6 +34,7 @@ import socket
 import threading
 import re
 import sys
+import feedparser
 
 import supybot.conf as conf
 import supybot.utils as utils
@@ -51,14 +52,6 @@ except ImportError:
 
 from supybot.i18n import PluginInternationalization, internationalizeDocstring
 _ = PluginInternationalization('RSS')
-
-try:
-    feedparser = utils.python.universalImport('feedparser.feedparser',
-            'local.feedparser.feedparser', 'feedparser', 'local.feedparser')
-except ImportError:
-    raise callbacks.Error, \
-            'You need the feedparser module installed to use this plugin.  ' \
-            'Download the module at <http://feedparser.org/>.'
 
 def getFeedName(irc, msg, args, state):
     if not registry.isValidRegistryName(args[0]):
@@ -298,7 +291,7 @@ class RSS(callbacks.Plugin):
             # and DoS the website in question.
             self.acquireLock(url)
             if self.willGetNewFeed(url):
-                results = None
+                results = {}
                 try:
                     self.log.debug('Downloading new feed from %u', url)
                     results = feedparser.parse(utils.web.getUrl(url))
@@ -313,9 +306,7 @@ class RSS(callbacks.Plugin):
                     # These seem mostly harmless.  We'll need reports of a
                     # kind that isn't.
                     self.log.debug('Allowing bozo_exception %r through.', e)
-                if results is None:
-                    self.log.error('Could not fetch feed %s' % url)
-                elif results.get('feed', {}):
+                if results.get('feed', {}) and self.getHeadlines(results):
                     self.cachedFeeds[url] = results
                     self.lastRequest[url] = time.time()
                 else:
