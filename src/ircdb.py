@@ -1,7 +1,7 @@
 ###
 # Copyright (c) 2002-2009, Jeremiah Fincher
-# Copyright (c) 2009, James McCoy
 # Copyright (c) 2011, Valentin Lorentz
+# Copyright (c) 2009,2013, James McCoy
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -322,9 +322,20 @@ class IrcUser(object):
         self.nicks[network].remove(nick)
 
     def addAuth(self, hostmask):
-        """Sets a user's authenticated hostmask.  This times out in 1 hour."""
+        """Sets a user's authenticated hostmask.  This times out according to
+        conf.supybot.timeoutIdentification.  If hostmask exactly matches an
+        existing, known hostmask, the previous entry is removed."""
         if self.checkHostmask(hostmask, useAuth=False) or not self.secure:
             self.auth.append((time.time(), hostmask))
+            knownHostmasks = set()
+            def uniqueHostmask(auth):
+                (_, mask) = auth
+                if mask not in knownHostmasks:
+                    knownHostmasks.add(mask)
+                    return True
+                return False
+            uniqued = filter(uniqueHostmask, reversed(self.auth))
+            self.auth = list(reversed(uniqued))
         else:
             raise ValueError, 'secure flag set, unmatched hostmask'
 
@@ -542,7 +553,8 @@ class IrcUserCreator(Creator):
                 self.users.setUser(self.u)
             except DuplicateHostmask:
                 log.error('Hostmasks for %s collided with another user\'s.  '
-                          'Resetting hostmasks for %s.', self.u.name)
+                          'Resetting hostmasks for %s.',
+                          self.u.name, self.u.name)
                 # Some might argue that this is arbitrary, and perhaps it is.
                 # But we've got to do *something*, so we'll show some deference
                 # to our lower-numbered users.
