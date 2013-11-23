@@ -241,6 +241,8 @@ class Aka(callbacks.Plugin):
 
     def isCommandMethod(self, name):
         args = name.split(' ')
+        if '|' in args:
+            return False
         if len(args) > 1 and \
                 callbacks.canonicalName(args[0]) != self.canonicalName():
             for cb in dynamic.irc.callbacks: # including this plugin
