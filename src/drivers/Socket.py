@@ -34,6 +34,7 @@ Contains simple socket drivers.  Asyncore bugged (haha, pun!) me.
 
 from __future__ import division
 
+import os
 import sys
 import time
 import errno
@@ -228,7 +229,7 @@ class SocketDriver(drivers.IrcDriver, drivers.ServersMixin):
                             line = line.decode('utf8', 'replace')
 
                 msg = drivers.parseMsg(line)
-                if msg is not None:
+                if msg is not None and self.irc is not None:
                     self.irc.feedMsg(msg)
         except socket.timeout:
             pass
@@ -306,8 +307,13 @@ class SocketDriver(drivers.IrcDriver, drivers.ServersMixin):
                 assert globals().has_key('ssl')
                 certfile = getattr(conf.supybot.networks, self.irc.network) \
                         .certfile()
-                self.conn = ssl.wrap_socket(self.conn,
-                        certfile=certfile or None)
+                if not certfile:
+                    certfile = None
+                elif not os.path.isfile(certfile):
+                    drivers.log.warning('Could not find cert file %s.' %
+                            certfile)
+                    certfile = None
+                self.conn = ssl.wrap_socket(self.conn, certfile=certfile)
             self.conn.connect((address, server[1]))
             def setTimeout():
                 self.conn.settimeout(conf.supybot.drivers.poll())
