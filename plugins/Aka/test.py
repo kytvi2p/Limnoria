@@ -87,11 +87,7 @@ class AkaChannelTestCase(ChannelPluginTestCase):
     def testAllArgs(self):
         self.assertNotError('aka add swap "echo $2 $1 $*"')
         self.assertResponse('swap 1 2 3 4 5', '2 1 3 4 5')
-        self.assertNotError('aka add foo "echo $1 @1 $*"')
-        self.assertResponse('foo bar baz qux', 'bar baz baz qux')
-        self.assertNotError('aka remove foo')
-        self.assertNotError('aka add foo "echo $* $2 $*"')
-        self.assertResponse('foo bar baz qux quux', 'qux quux baz qux quux')
+        self.assertError('aka add foo "echo $1 @1 $*"')
         self.assertNotError('aka add moo echo $1 $*')
         self.assertError('moo')
         self.assertResponse('moo foo', 'foo')
@@ -164,6 +160,9 @@ class AkaChannelTestCase(ChannelPluginTestCase):
     def testNoOverride(self):
         self.assertNotError('aka add "echo foo" "echo bar"')
         self.assertResponse('echo foo', 'foo')
+        self.assertNotError('aka add foo "echo baz"')
+        self.assertNotError('aka add "foo bar" "echo qux"')
+        self.assertResponse('foo bar', 'baz')
 
     def testRecursivity(self):
         self.assertNotError('aka add fact '
@@ -178,6 +177,10 @@ class AkaChannelTestCase(ChannelPluginTestCase):
 
 class AkaTestCase(PluginTestCase):
     plugins = ('Aka', 'Alias', 'User', 'Utilities')
+
+    def testMaximumLength(self):
+        self.assertNotError('aka add "foo bar baz qux quux" "echo test"')
+        self.assertError('aka add "foo bar baz qux quux corge" "echo test"')
 
     def testAkaLockedHelp(self):
         self.assertNotError('register evil_admin foo')
