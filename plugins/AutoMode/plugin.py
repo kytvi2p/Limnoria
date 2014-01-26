@@ -55,19 +55,23 @@ class AutoMode(callbacks.Plugin):
         def do(type):
             cap = ircdb.makeChannelCapability(channel, type)
             cap_auto = ircdb.makeChannelCapability(channel, 'auto'+type)
-            apply_mode = False
             try:
-                apply_mode |= ircdb.checkCapability(msg.prefix, cap,
-                        ignoreOwner=not self.registryValue('owner'))
+                apply_mode = ircdb.checkCapability(msg.prefix, cap,
+                        ignoreOwner=not self.registryValue('owner'),
+                        ignoreChannelOp=True, ignoreDefaultAllow=True)
             except KeyError:
-                pass
-            try:
-                apply_mode |= ircdb.checkCapability(msg.prefix, cap_auto,
-                        ignoreOwner=not self.registryValue('owner'))
-            except KeyError:
-                pass
-            if apply_mode:
-                if self.registryValue(type, channel):
+                apply_mode = False
+            if self.registryValue('alternativeCapabilities', channel):
+                try:
+                    override = ircdb.checkCapability(msg.prefix, cap_auto,
+                            ignoreOwner=not self.registryValue('owner'),
+                            ignoreChannelOp=True, ignoreDefaultAllow=True)
+                except KeyError:
+                    override = False
+            else:
+                override = False
+            if apply_mode or override:
+                if override or self.registryValue(type, channel):
                     self.log.info('Scheduling auto-%s of %s in %s.',
                                   type, msg.prefix, channel)
                     def dismiss():

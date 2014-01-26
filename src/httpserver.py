@@ -157,10 +157,12 @@ set_default_templates(DEFAULT_TEMPLATES)
 def get_template(filename):
     path = conf.supybot.directories.data.web.dirize(filename)
     if os.path.isfile(path):
-        return open(path, 'r').read()
+        with open(path, 'r') as fd:
+            return fd.read()
     else:
         assert os.path.isfile(path + '.example'), path + '.example'
-        return open(path + '.example', 'r').read()
+        with open(path + '.example', 'r') as fd:
+            return fd.read()
 
 class RealSupyHTTPServer(HTTPServer):
     # TODO: make this configurable
@@ -184,6 +186,7 @@ class RealSupyHTTPServer(HTTPServer):
                     'reloaded the plugin and it didn\'t properly unhook. '
                     'Forced unhook.') % subdir)
         self.callbacks[subdir] = callback
+        callback.doHook(self, subdir)
     def unhook(self, subdir):
         callback = self.callbacks.pop(subdir) # May raise a KeyError. We don't care.
         callback.doUnhook(self)
@@ -283,6 +286,9 @@ class SupyHTTPServerCallback(object):
 
     doPost = doHead = doGet
 
+    def doHook(self, handler, subdir):
+        """Method called when hooking this callback."""
+        pass
     def doUnhook(self, handler):
         """Method called when unhooking this callback."""
         pass
@@ -360,6 +366,8 @@ class Favicon(SupyHTTPServerCallback):
                 found = True
             except IOError:
                 pass
+            finally:
+                icon.close()
         if found:
             response = icon.read()
             filename = file_path.rsplit(os.sep, 1)[1]
