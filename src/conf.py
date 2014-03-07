@@ -839,7 +839,7 @@ class Databases(registry.SpaceSeparatedListOfStrings):
     def __call__(self):
         v = super(Databases, self).__call__()
         if not v:
-            v = ['anydbm', 'cdb', 'flat', 'pickle']
+            v = ['anydbm', 'dbm', 'cdb', 'flat', 'pickle']
             if 'sqlite' in sys.modules:
                 v.insert(0, 'sqlite')
             if 'sqlite3' in sys.modules:
@@ -1055,7 +1055,11 @@ registerGlobalValue(supybot.protocols.irc, 'umodes',
 
 registerGlobalValue(supybot.protocols.irc, 'vhost',
     registry.String('', _("""Determines what vhost the bot will bind to before
-    connecting to the IRC server.""")))
+    connecting a server (IRC, HTTP, …) via IPv4.""")))
+
+registerGlobalValue(supybot.protocols.irc, 'vhostv6',
+    registry.String('', _("""Determines what vhost the bot will bind to before
+    connecting a server (IRC, HTTP, …) via IPv6.""")))
 
 registerGlobalValue(supybot.protocols.irc, 'maxHistoryLength',
     registry.Integer(1000, _("""Determines how many old messages the bot will

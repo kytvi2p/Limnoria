@@ -40,20 +40,20 @@ from .web import _ipAddr, _domain
 emailRe = re.compile(r"^(\w&.+-]+!)*[\w&.+-]+@(%s|%s)$" % (_domain, _ipAddr),
                      re.I)
 
-def getAddressFromHostname(host, attempt=0):
-    addrinfo = socket.getaddrinfo(host, None)
+def getAddressFromHostname(host, port=None, attempt=0):
+    addrinfo = socket.getaddrinfo(host, port)
     addresses = []
     for (family, socktype, proto, canonname, sockaddr) in addrinfo:
         if sockaddr[0] not in addresses:
             addresses.append(sockaddr[0])
     return addresses[attempt % len(addresses)]
 
-def getSocket(host, socks_proxy=None):
+def getSocket(host, port=None, socks_proxy=None, vhost=None, vhostv6=None):
     """Returns a socket of the correct AF_INET type (v4 or v6) in order to
     communicate with host.
     """
     if not socks_proxy:
-        addrinfo = socket.getaddrinfo(host, None)
+        addrinfo = socket.getaddrinfo(host, port)
         host = addrinfo[0][4][0]
     if socks_proxy:
         import socks
@@ -62,12 +62,23 @@ def getSocket(host, socks_proxy=None):
         s.setproxy(socks.PROXY_TYPE_SOCKS5, hostname, int(port),
                 rdns=True)
         return s
+    import supybot.conf as conf
     if isIPV4(host):
-        return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if not vhost:
+            vhost = conf.supybot.protocols.irc.vhost()
+        if vhost:
+            s.bind((vhost, 0))
+        return s
     elif isIPV6(host):
-        return socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        if not vhostv6:
+            vhostv6 = conf.supybot.protocols.irc.vhostv6()
+        if vhostv6:
+            s.bind((vhostv6, 0))
+        return s
     else:
-        raise socket.error, 'Something wonky happened.'
+        raise socket.error('Something wonky happened.')
 
 def isIP(s):
     """Returns whether or not a given string is an IP address.

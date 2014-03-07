@@ -98,6 +98,7 @@ class MiscTestCase(ChannelPluginTestCase):
     def testList(self):
         self.assertNotError('list')
         self.assertNotError('list Misc')
+        self.assertRegexp('list --unloaded', 'Ctcp')
 
     def testListIsCaseInsensitive(self):
         self.assertNotError('list misc')
@@ -131,8 +132,8 @@ class MiscTestCase(ChannelPluginTestCase):
 
     if network:
         def testVersion(self):
-            print '*** This test should start passing when we have our '\
-                  'threaded issues resolved.'
+            print('*** This test should start passing when we have our '\
+                  'threaded issues resolved.')
             self.assertNotError('version')
 
     def testSource(self):
@@ -226,6 +227,13 @@ class MiscTestCase(ChannelPluginTestCase):
 
     def testInvalidCommand(self):
         self.assertError('echo []')
+
+    def testInvalidCommands(self):
+        with conf.supybot.abuse.flood.command.invalid.maximum.context(3):
+            self.assertNotRegexp('foo', 'given me', frm='f!f@__no_testcap__')
+            self.assertNotRegexp('bar', 'given me', frm='f!f@__no_testcap__')
+            self.assertNotRegexp('baz', 'given me', frm='f!f@__no_testcap__')
+            self.assertRegexp('qux', 'given me', frm='f!f@__no_testcap__')
 
     def testMoreIsCaseInsensitive(self):
         self.assertNotError('echo %s' % ('abc'*2000))

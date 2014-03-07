@@ -69,7 +69,7 @@ class Later(callbacks.Plugin):
     def _openNotes(self):
         try:
             fd = open(self.filename)
-        except EnvironmentError, e:
+        except EnvironmentError as e:
             self.log.warning('Couldn\'t open %s: %s', self.filename, e)
             return
         reader = csv.reader(fd)
@@ -245,7 +245,7 @@ class Later(callbacks.Plugin):
             private = self.registryValue('private')
             for (when, whence, note) in notes:
                 s = self._formatNote(when, whence, note)
-                irc.reply(s, private=private)
+                irc.reply(s, private=private, prefixNick=not private)
             self._flushNotes()
 
     def _formatNote(self, when, whence, note):

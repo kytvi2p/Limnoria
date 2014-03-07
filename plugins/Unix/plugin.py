@@ -153,7 +153,7 @@ class Unix(callbacks.Plugin):
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
                                     stdin=subprocess.PIPE)
-        except OSError, e:
+        except OSError as e:
             irc.error(e, Raise=True)
         ret = inst.poll()
         if ret is not None:
@@ -210,17 +210,18 @@ class Unix(callbacks.Plugin):
                 args.append('-a')
             args.extend(self.registryValue('fortune.files'))
             try:
-                inst = subprocess.Popen(args, close_fds=True,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        stdin=open(os.devnull))
-            except OSError, e:
+                with open(os.devnull) as null:
+                    inst = subprocess.Popen(args,
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE,
+                                            stdin=null)
+            except OSError as e:
                 irc.error(_('It seems the configured fortune command was '
                           'not available.'), Raise=True)
             (out, err) = inst.communicate()
             inst.wait()
             lines = out.splitlines()
-            lines = map(str.rstrip, lines)
+            lines = list(map(str.rstrip, lines))
             lines = filter(None, lines)
             irc.replies(lines, joiner=' ')
         else:
@@ -241,10 +242,11 @@ class Unix(callbacks.Plugin):
         if wtfCmd:
             something = something.rstrip('?')
             try:
-                inst = subprocess.Popen([wtfCmd, something], close_fds=True,
-                                        stdout=subprocess.PIPE,
-                                        stderr=open(os.devnull),
-                                        stdin=open(os.devnull))
+                with open(os.devnull, 'r+') as null:
+                    inst = subprocess.Popen([wtfCmd, something],
+                                            stdout=subprocess.PIPE,
+                                            stderr=null,
+                                            stdin=null)
             except OSError:
                 irc.error(_('It seems the configured wtf command was not '
                           'available.'), Raise=True)
@@ -291,10 +293,12 @@ class Unix(callbacks.Plugin):
                 args.append('5')
             args.append(host)
             try:
-                inst = subprocess.Popen(args, stdout=subprocess.PIPE,
-                                              stderr=subprocess.PIPE,
-                                              stdin=open(os.devnull))
-            except OSError, e:
+                with open(os.devnull) as null:
+                    inst = subprocess.Popen(args,
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE,
+                                            stdin=null)
+            except OSError as e:
                 irc.error('It seems the configured ping command was '
                           'not available (%s).' % e, Raise=True)
             result = inst.communicate()
@@ -311,7 +315,7 @@ class Unix(callbacks.Plugin):
 
     _hostExpr = re.compile(r'^[a-z0-9][a-z0-9\.-]*[a-z0-9]$', re.I)
     ping = thread(wrap(ping, [getopts({'c':'positiveInt','i':'float',
-                                't':'positiveInt','W':'positiveInt'}), 
+                                't':'positiveInt','W':'positiveInt'}),
                        first('ip', ('matches', _hostExpr, 'Invalid hostname'))]))
 
     def sysuptime(self, irc, msg, args):
@@ -323,11 +327,12 @@ class Unix(callbacks.Plugin):
         if uptimeCmd:
             args = [uptimeCmd]
             try:
-                inst = subprocess.Popen(args, close_fds=True,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        stdin=open(os.devnull))
-            except OSError, e:
+                with open(os.devnull) as null:
+                    inst = subprocess.Popen(args,
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE,
+                                            stdin=null)
+            except OSError as e:
                 irc.error('It seems the configured uptime command was '
                           'not available.', Raise=True)
             (out, err) = inst.communicate()
@@ -351,11 +356,12 @@ class Unix(callbacks.Plugin):
         if unameCmd:
             args = [unameCmd, '-a']
             try:
-                inst = subprocess.Popen(args, close_fds=True,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        stdin=open(os.devnull))
-            except OSError, e:
+                with open(os.devnull) as null:
+                    inst = subprocess.Popen(args,
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE,
+                                            stdin=null)
+            except OSError as e:
                 irc.error('It seems the configured uptime command was '
                           'not available.', Raise=True)
             (out, err) = inst.communicate()
@@ -371,30 +377,63 @@ class Unix(callbacks.Plugin):
                       'variable appropriately.')
 
     def call(self, irc, msg, args, text):
-        """<command to call with any arguments> 
+        """<command to call with any arguments>
         Calls any command available on the system, and returns its output.
         Requires owner capability.
         Note that being restricted to owner, this command does not do any
         sanity checking on input/output. So it is up to you to make sure
-        you don't run anything that will spamify your channel or that 
-        will bring your machine to its knees. 
+        you don't run anything that will spamify your channel or that
+        will bring your machine to its knees.
         """
         args = shlex.split(text)
         try:
-            inst = subprocess.Popen(args, stdout=subprocess.PIPE, 
-                                          stderr=subprocess.PIPE,
-                                          stdin=open(os.devnull))
-        except OSError, e:
+            with open(os.devnull) as null:
+                inst = subprocess.Popen(args,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        stdin=null)
+        except OSError as e:
             irc.error('It seems the requested command was '
                       'not available (%s).' % e, Raise=True)
         result = inst.communicate()
         if result[1]: # stderr
             irc.error(' '.join(result[1].decode('utf8').split()))
         if result[0]: # stdout
-            response = result[0].decode('utf8').split("\n");
+            response = result[0].decode('utf8').splitlines()
             response = [l for l in response if l]
             irc.replies(response)
     call = thread(wrap(call, ["owner", "text"]))
+
+    def shell(self, irc, msg, args, text):
+        """<command to call with any arguments>
+        Calls any command available on the system using the shell
+        specified by the SHELL environment variable, and returns its
+        output.
+        Requires owner capability.
+        Note that being restricted to owner, this command does not do any
+        sanity checking on input/output. So it is up to you to make sure
+        you don't run anything that will spamify your channel or that
+        will bring your machine to its knees.
+        """
+        try:
+            with open(os.devnull) as null:
+                inst = subprocess.Popen(text,
+                                        shell=True,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        stdin=null)
+        except OSError as e:
+            irc.error('It seems the shell (%s) was not available (%s)' %
+                      (os.getenv('SHELL'), e), Raise=True)
+        result = inst.communicate()
+        if result[1]: # stderr
+            irc.error(' '.join(result[1].decode('utf8').split()))
+        if result[0]: # stdout
+            response = result[0].decode('utf8').splitlines()
+            response = [l for l in response if l]
+            irc.replies(response)
+    shell = thread(wrap(shell, ["owner", "text"]))
+
 
 Class = Unix
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:

@@ -50,8 +50,7 @@ class Network(callbacks.Plugin):
         if irc:
             return irc
         else:
-            raise callbacks.Error, \
-                  'I\'m not currently connected to %s.' % network
+            raise callbacks.Error('I\'m not currently connected to %s.' % network)
 
     @internationalizeDocstring
     def connect(self, irc, msg, args, opts, network, server, password):
@@ -141,7 +140,17 @@ class Network(callbacks.Plugin):
         """
         self.Proxy(otherIrc, msg, commandAndArgs)
     command = wrap(command, ['admin', ('networkIrc', True), many('something')])
-
+    
+    def cmdall(self, irc, msg, args, commandAndArgs):
+        """<command> <args>...
+        
+        Perform <command> (with its associated <arg>s) on all networks.
+        """
+        ircs = world.ircs
+        for ircd in ircs:
+            self.Proxy(ircd, msg, commandAndArgs)
+    cmdall = wrap(cmdall, ['admin', many('something')])
+    
     ###
     # whois command-related stuff.
     ###

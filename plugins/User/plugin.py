@@ -28,6 +28,7 @@
 ###
 
 import re
+import sys
 import uuid
 import time
 import fnmatch
@@ -45,7 +46,7 @@ _ = PluginInternationalization('User')
 class User(callbacks.Plugin):
     def _checkNotChannel(self, irc, msg, password=' '):
         if password and irc.isChannel(msg.args[0]):
-            raise callbacks.Error, conf.supybot.replies.requiresPrivacy()
+            raise callbacks.Error(conf.supybot.replies.requiresPrivacy())
 
     @internationalizeDocstring
     def list(self, irc, msg, args, optlist, glob):
@@ -280,7 +281,7 @@ class User(callbacks.Plugin):
             command.
             """
             def getHostmasks(user):
-                hostmasks = map(repr, user.hostmasks)
+                hostmasks = list(map(repr, user.hostmasks))
                 if hostmasks:
                     hostmasks.sort()
                     return format('%L', hostmasks)
@@ -349,11 +350,11 @@ class User(callbacks.Plugin):
                               Raise=True)
             try:
                 user.addHostmask(hostmask)
-            except ValueError, e:
+            except ValueError as e:
                 irc.error(str(e), Raise=True)
             try:
                 ircdb.users.setUser(user)
-            except ValueError, e:
+            except ValueError as e:
                 irc.error(str(e), Raise=True)
             except ircdb.DuplicateHostmask:
                 irc.error(_('That hostmask is already registered.'),
@@ -415,7 +416,7 @@ class User(callbacks.Plugin):
 
         def _expire_tokens(self):
             now = time.time()
-            self._tokens = dict(filter(lambda (x,y): y[1]>now,
+            self._tokens = dict(filter(lambda x_y: x_y[1][1]>now,
                 self._tokens.items()))
 
         @internationalizeDocstring
@@ -490,7 +491,10 @@ class User(callbacks.Plugin):
             Check the GPG signature at the <url> and authenticates you if
             the key used is associated to a user."""
             self._expire_tokens()
-            match = self._auth_re.search(utils.web.getUrl(url))
+            content = utils.web.getUrl(url)
+            if sys.version_info[0] >= 3 and isinstance(content, bytes):
+                content = content.decode()
+            match = self._auth_re.search(content)
             if not match:
                 irc.error(_('Signature or token not found.'), Raise=True)
             data = match.group(0)
@@ -507,7 +511,7 @@ class User(callbacks.Plugin):
                 prefix, expiry = self._tokens.pop(token)
                 found = False
                 for (id, user) in ircdb.users.items():
-                    if keyid in map(lambda x:x[-len(keyid):], user.gpgkeys):
+                    if keyid in [x[-len(keyid):] for x in user.gpgkeys]:
                         user.addAuth(msg.prefix)
                         ircdb.users.setUser(user, flush=False)
                         irc.reply(_('You are now authenticated as %s.') %

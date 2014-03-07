@@ -3,7 +3,10 @@
 import os
 import sys
 import glob
+import operator
 import subprocess
+
+from supybot.i18n import parse
 
 def main():
     directory = sys.argv[1]
@@ -40,9 +43,9 @@ def _checkCore(corePath):
         potPath = os.path.join(os.getcwd(), 'locales', translation)
         po = open(potPath)
         if checkTranslation(pot, po):
-            print 'OK:      ' + potPath
+            print('OK:      ' + potPath)
         else:
-            print 'ERROR:   ' + potPath
+            print('ERROR:   ' + potPath)
 
 
 @changedir
@@ -57,33 +60,16 @@ def checkPlugin(pluginPath):
         potPath = os.path.join(os.getcwd(), 'locales', translation)
         po = open(potPath)
         if checkTranslation(pot, po):
-            print 'OK:      ' + potPath
+            print('OK:      ' + potPath)
         else:
-            print 'ERROR:   ' + potPath
+            print('ERROR:   ' + potPath)
 
 def checkTranslation(pot, po):
     checking = False
-    for potLine in pot:
-        if not checking and potLine.startswith('msgid'):
-            checking = True
-            while True:
-                poLine = po.readline()
-                if poLine == '': # EOF
-                    return False
-                if poLine.startswith('msgid'):
-                    if poLine == potLine:
-                        break
-                    else:
-                        return False
-            continue
-        elif checking and potLine.startswith('msgstr'):
-            checking = False
-
-        if checking:
-            poLine = po.readline()
-            if potLine != poLine:
-                return False
-    return True
+    pot = set(map(operator.itemgetter(0), parse(pot)))
+    po = set(map(operator.itemgetter(0), parse(po)))
+    diff = [x for x in pot if x not in po]
+    return not bool(diff)
 
 if __name__ == '__main__':
     main()

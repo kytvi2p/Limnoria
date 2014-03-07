@@ -29,7 +29,10 @@
 ###
 
 import os
+import sys
 import time
+if sys.version_info[0] < 3:
+    from io import open
 from cStringIO import StringIO
 
 import supybot.conf as conf
@@ -98,7 +101,7 @@ class ChannelLogger(callbacks.Plugin):
         for log in self._logs():
             try:
                 log.flush()
-            except ValueError, e:
+            except ValueError as e:
                 if e.args[0] != 'I/O operation on a closed file':
                     self.log.exception('Odd exception:')
 
@@ -132,7 +135,7 @@ class ChannelLogger(callbacks.Plugin):
             for (channel, log) in logs.items():
                 if self.registryValue('rotateLogs', channel):
                     name = self.getLogName(channel)
-                    if name != log.name:
+                    if name != os.path.basename(log.name):
                         log.close()
                         del logs[channel]
 
@@ -149,7 +152,7 @@ class ChannelLogger(callbacks.Plugin):
             try:
                 name = self.getLogName(channel)
                 logDir = self.getLogDir(irc, channel)
-                log = open(os.path.join(logDir, name), 'a')
+                log = open(os.path.join(logDir, name), encoding='utf-8', mode='a')
                 logs[channel] = log
                 return log
             except IOError:
@@ -159,8 +162,10 @@ class ChannelLogger(callbacks.Plugin):
     def timestamp(self, log):
         format = conf.supybot.log.timestampFormat()
         if format:
-            log.write(time.strftime(format))
-            log.write('  ')
+            string = time.strftime(format) + '  '
+            if sys.version_info[0] < 3:
+                string = string.decode('utf8', 'ignore')
+            log.write(string)
 
     def normalizeChannel(self, irc, channel):
         return ircutils.toLower(channel)
@@ -175,6 +180,8 @@ class ChannelLogger(callbacks.Plugin):
             self.timestamp(log)
         if self.registryValue('stripFormatting', channel):
             s = ircutils.stripFormatting(s)
+        if sys.version_info[0] < 3:
+            s = s.decode('utf8', 'ignore')
         log.write(s)
         if self.registryValue('flushImmediately'):
             log.flush()

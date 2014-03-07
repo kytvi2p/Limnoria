@@ -135,7 +135,7 @@ class StatsDB(plugins.ChannelUserDB):
         return v.values()
 
     def deserialize(self, channel, id, L):
-        L = map(int, L)
+        L = list(map(int, L))
         if id == 'channelStats':
             return ChannelStat(*L)
         else:
@@ -336,9 +336,9 @@ class ChannelStats(callbacks.Plugin):
                     v = eval(expr, e, e)
                 except ZeroDivisionError:
                     v = float('inf')
-                except NameError, e:
+                except NameError as e:
                     irc.errorInvalid(_('stat variable'), str(e).split()[1])
-                except Exception, e:
+                except Exception as e:
                     irc.error(utils.exnToString(e), Raise=True)
                 if id == 0:
                     users.append((v, irc.nick))
@@ -359,7 +359,7 @@ class ChannelStats(callbacks.Plugin):
         the message isn't sent on the channel itself.
         """
         if channel not in irc.state.channels:
-            irc.error(_('I am not in %s.', channel), Raise=True)
+            irc.error(_('I am not in %s.') % channel, Raise=True)
         elif msg.nick not in irc.state.channels[channel].users:
             irc.error(_('You must be in %s to use this command.') % channel,
                     Raise=True)
